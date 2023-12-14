@@ -460,7 +460,7 @@ export function ChatActions(props: {
 
   const onImageSelected = async (e: any) => {
     var reader = new FileReader();
-    var img = new Image();
+    const img = new Image();
     const file = e.target.files[0];
     reader.readAsDataURL(file);
     reader.onload = function (e) {
