@@ -459,26 +459,7 @@ export function ChatActions(props: {
   }
 
   const onImageSelected = async (e: any) => {
-    var reader = new FileReader();
-    const img = new Image();
     const file = e.target.files[0];
-    reader.readAsDataURL(file);
-    reader.onload = function (e) {
-      img.src = e.target.result;
-      console.log(img.src);
-      _this.setState({ preSrcs: [..._this.state.preSrcs, img.src] })
-    };
-    // base64地址图片加载完毕后执行
-    img.onload = function () {
-      // 图片原始尺寸
-      var originWidth = this.width;
-      var originHeight = this.height;
-      if (originHeight*originWidth > 1024*1024) {
-        alert("Height*Width<=1024*1024")
-        return
-      }
-    }
-
     const fileName = await api.file.upload(file);
     props.imageSelected({
       fileName,
