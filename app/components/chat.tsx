@@ -479,12 +479,12 @@ export function ChatActions(props: {
     }
     // Check if pixel size is greater than 1024 * 1024
     console.log('Pixel Size:', img.width, img.height);
-    getPixelSize(img).then((pixelSize: any) => {
+    getPixelSize(img).then(async (pixelSize: any) => {
       if (pixelSize.width*pixelSize.height > 1024 * 1024) {
         showToast("pixel must <= 1024 * 1024");
         console.log("cancel image upload");
       } else {
-        const fileName = api.file.upload(file);
+        const fileName = await api.file.upload(file);
         props.imageSelected({
           fileName,
           fileUrl: `/api/file/${fileName}`,
