@@ -460,12 +460,30 @@ export function ChatActions(props: {
 
   const onImageSelected = async (e: any) => {
     const file = e.target.files[0];
+
+    // Get pixel size of image
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+    img.onload = () => {
+      const pixelSize = {
+        width: img.width,
+        height: img.height,
+      };
+      if (pixelSize.width*pixelSize.height > 1024 * 1024) {
+        showToast("pixel must <= 1024 * 1024");
+        return;
+      }
+      console.log('Pixel Size:', pixelSize);
+    };
+
     const fileName = await api.file.upload(file);
     props.imageSelected({
       fileName,
       fileUrl: `/api/file/${fileName}`,
     });
     e.target.value = null;
+
+
   };
 
   // switch model
