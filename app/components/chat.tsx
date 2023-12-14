@@ -464,14 +464,17 @@ export function ChatActions(props: {
     // Get pixel size of image
     const img = document.createElement('img')
     img.src = URL.createObjectURL(file);
-    img.onload = () => {
-      const pixelSize = {
-        width: img.width,
-        height: img.height,
-      };
-      console.log('Pixel Size:', pixelSize);
-    };
-    console.log("image size", img.width, img.height);
+    async function getPixelSize(img: any) {
+      img.onload = function() {
+        const pixelSize = {
+          width: img.width,
+          height: img.height,
+        };
+        console.log('Pixel Size:', img.width, img.height);
+      }
+    }
+    // Check if pixel size is greater than 1024 * 1024
+    await getPixelSize(img);
     if (img.width*img.height > 1024 * 1024) {
       showToast("pixel must <= 1024 * 1024");
       console.log("cancel image upload");
@@ -484,7 +487,6 @@ export function ChatActions(props: {
       e.target.value = null;
       console.log("image upload");
     }
-    
   };
 
   // switch model
