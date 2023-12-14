@@ -462,7 +462,7 @@ export function ChatActions(props: {
     const file = e.target.files[0];
 
     // Get pixel size of image
-    const img = new Image();
+    const img = document.createElement('img')
     img.src = URL.createObjectURL(file);
     img.onload = () => {
       const pixelSize = {
