@@ -159,6 +159,7 @@ export function SideBar(props: { className?: string }) {
         </div>
         <div className={styles["sidebar-sub-title"]}>
           插件功能已更新，欢迎使用。输入搜索提示语可在线搜索。DALL·E比较贵，酌情使用。
+          插件功能会大量消耗token，不要用gpt-4调用插件。
         </div>
         <div className={styles["sidebar-logo"] + " no-dark"}>
           <ChatGptIcon />
