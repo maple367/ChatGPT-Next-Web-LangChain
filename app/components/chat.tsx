@@ -471,6 +471,7 @@ export function ChatActions(props: {
       };
       console.log('Pixel Size:', pixelSize);
     };
+    console.log("image size", img.width, img.height);
     if (img.width*img.height > 1024 * 1024) {
       showToast("pixel must <= 1024 * 1024");
       console.log("cancel image upload");
