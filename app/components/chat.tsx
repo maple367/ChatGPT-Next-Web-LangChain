@@ -465,28 +465,34 @@ export function ChatActions(props: {
     const img = document.createElement('img')
     img.src = URL.createObjectURL(file);
     async function getPixelSize(img: any) {
-      img.onload = function() {
-        const pixelSize = {
-          width: img.width,
-          height: img.height,
-        };
-        console.log('Pixel Size:', img.width, img.height);
-      }
+      return new Promise((resolve, reject) => {
+        img.onload = function() {
+          const pixelSize = {
+            width: img.width,
+            height: img.height,
+          };
+          console.log('Pixel Size:', img.width, img.height);
+          resolve(pixelSize);
+        }
+        img.onerror = reject
+      })
     }
     // Check if pixel size is greater than 1024 * 1024
-    await getPixelSize(img);
-    if (img.width*img.height > 1024 * 1024) {
-      showToast("pixel must <= 1024 * 1024");
-      console.log("cancel image upload");
-    } else {
-      const fileName = await api.file.upload(file);
-      props.imageSelected({
-        fileName,
-        fileUrl: `/api/file/${fileName}`,
-      });
-      e.target.value = null;
-      console.log("image upload");
-    }
+    console.log('Pixel Size:', img.width, img.height);
+    getPixelSize(img).then((pixelSize: any) => {
+      if (pixelSize.width*pixelSize.height > 1024 * 1024) {
+        showToast("pixel must <= 1024 * 1024");
+        console.log("cancel image upload");
+      } else {
+        const fileName = api.file.upload(file);
+        props.imageSelected({
+          fileName,
+          fileUrl: `/api/file/${fileName}`,
+        });
+        e.target.value = null;
+        console.log("image upload");
+      }
+    })
   };
 
   // switch model
