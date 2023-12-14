@@ -471,19 +471,18 @@ export function ChatActions(props: {
       };
       if (pixelSize.width*pixelSize.height > 1024 * 1024) {
         showToast("pixel must <= 1024 * 1024");
-        return;
+        console.log("cancel image upload");
+      } else {
+        const fileName = await api.file.upload(file);
+        props.imageSelected({
+          fileName,
+          fileUrl: `/api/file/${fileName}`,
+        });
+        e.target.value = null;
+        console.log("image upload");
       }
       console.log('Pixel Size:', pixelSize);
     };
-
-    const fileName = await api.file.upload(file);
-    props.imageSelected({
-      fileName,
-      fileUrl: `/api/file/${fileName}`,
-    });
-    e.target.value = null;
-
-
   };
 
   // switch model
