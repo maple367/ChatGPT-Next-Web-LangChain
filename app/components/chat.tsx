@@ -96,7 +96,7 @@ import { ExportMessageModal } from "./exporter";
 import { getClientConfig } from "../config/client";
 import { useAllModels } from "../utils/hooks";
 import Image from "next/image";
-import { api } from "../client/api";
+import { ClientApi } from "../client/api";
 
 const Markdown = dynamic(async () => (await import("./markdown")).Markdown, {
   loading: () => <LoadingIcon />,
@@ -458,38 +458,19 @@ export function ChatActions(props: {
     document.getElementById("chat-image-file-select-upload")?.click();
   }
 
+  function closeImageButton() {
+    document.getElementById("chat-input-image-close")?.click();
+  }
+
   const onImageSelected = async (e: any) => {
     const file = e.target.files[0];
-
-    // Get pixel size of image
-    const img = document.createElement('img')
-    img.src = URL.createObjectURL(file);
-    async function getPixelSize(img: any) {
-      return new Promise((resolve, reject) => {
-        img.onload = function() {
-          const pixelSize = {
-            width: img.width,
-            height: img.height,
-          };
-          console.log('Pixel Size:', img.width, img.height);
-          resolve(pixelSize);
-        }
-        img.onerror = reject
-      })
-    }
-    // Check if pixel size is greater than 1024 * 1024
-    getPixelSize(img).then(async (pixelSize: any) => {
-      if (pixelSize.width*pixelSize.height > 1024 * 1024) {
-        showToast("pixel must <= 1024 * 1024");
-      } else {
-        const fileName = await api.file.upload(file);
-        props.imageSelected({
-          fileName,
-          fileUrl: `/api/file/${fileName}`,
-        });
-        e.target.value = null;
-      }
-    })
+    const api = new ClientApi();
+    const fileName = await api.file.upload(file);
+    props.imageSelected({
+      fileName,
+      fileUrl: `/api/file/${fileName}`,
+    });
+    e.target.value = null;
   };
 
   // switch model
@@ -512,7 +493,29 @@ export function ChatActions(props: {
       );
       showToast(nextModel);
     }
-  }, [chatStore, currentModel, models]);
+    const onPaste = (event: ClipboardEvent) => {
+      const items = event.clipboardData?.items || [];
+      const api = new ClientApi();
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf("image") === -1) continue;
+        const file = items[i].getAsFile();
+        if (file !== null) {
+          api.file.upload(file).then((fileName) => {
+            props.imageSelected({
+              fileName,
+              fileUrl: `/api/file/${fileName}`,
+            });
+          });
+        }
+      }
+    };
+    if (currentModel === "gpt-4-vision-preview") {
+      window.addEventListener("paste", onPaste);
+      return () => {
+        window.removeEventListener("paste", onPaste);
+      };
+    }
+  }, [chatStore, currentModel, models, props]);
 
   return (
     <div className={styles["chat-input-actions"]}>
@@ -577,8 +580,7 @@ export function ChatActions(props: {
 
         {config.pluginConfig.enable &&
           /^gpt(?!.*03\d{2}$).*$/.test(currentModel) &&
-          // currentModel != "gpt-4-vision-preview" &&
-          /^gpt(?!-4.*$).*$/.test(currentModel) && (
+          currentModel != "gpt-4-vision-preview" && (
             <ChatAction
               onClick={switchUsePlugins}
               text={
@@ -619,6 +621,7 @@ export function ChatActions(props: {
               chatStore.updateCurrentSession((session) => {
                 session.mask.modelConfig.model = s[0] as ModelType;
                 session.mask.syncGlobalConfig = false;
+                closeImageButton();
               });
               showToast(s[0]);
             }}
@@ -1461,6 +1464,7 @@ function _Chat() {
               </div>
               <button
                 className={styles["chat-input-image-close"]}
+                id="chat-input-image-close"
                 onClick={() => {
                   setUserImage(null);
                 }}

@@ -24,6 +24,7 @@ import {
 import { prettyObject } from "@/app/utils/format";
 import { getClientConfig } from "@/app/config/client";
 import { makeAzurePath } from "@/app/azure";
+import axios from "axios";
 
 export interface OpenAIListModelResponse {
   object: string;
@@ -37,7 +38,7 @@ export interface OpenAIListModelResponse {
 export class ChatGPTApi implements LLMApi {
   private disableListModels = true;
 
-  path(path: string): string {
+  path(path: string, model?: string): string {
     const accessStore = useAccessStore.getState();
 
     const isAzure = accessStore.provider === ServiceProvider.Azure;
@@ -64,6 +65,7 @@ export class ChatGPTApi implements LLMApi {
 
     if (isAzure) {
       path = makeAzurePath(path, accessStore.azureApiVersion);
+      return [baseUrl, model, path].join("/");
     }
 
     return [baseUrl, path].join("/");
@@ -75,6 +77,12 @@ export class ChatGPTApi implements LLMApi {
 
   async chat(options: ChatOptions) {
     const messages: any[] = [];
+
+    const getImageBase64Data = async (url: string) => {
+      const response = await axios.get(url, { responseType: "arraybuffer" });
+      const base64 = Buffer.from(response.data, "binary").toString("base64");
+      return base64;
+    };
     for (const v of options.messages) {
       let message: {
         role: string;
@@ -88,22 +96,13 @@ export class ChatGPTApi implements LLMApi {
         text: v.content,
       });
       if (v.image_url) {
-        await fetch(v.image_url)
-          .then((response) => response.arrayBuffer())
-          .then((buffer) => {
-            const base64Data = btoa(
-              String.fromCharCode(...new Uint8Array(buffer)),
-            );
-            message.content.push({
-              type: "image_url",
-              image_url: {
-                url: `data:image/jpeg;base64,${base64Data}`,
-              },
-            });
-          })
-          .catch((error) => {
-            console.error(error);
-          });
+        var base64Data = await getImageBase64Data(v.image_url);
+        message.content.push({
+          type: "image_url",
+          image_url: {
+            url: `data:image/jpeg;base64,${base64Data}`,
+          },
+        });
       }
       messages.push(message);
     }
@@ -138,7 +137,7 @@ export class ChatGPTApi implements LLMApi {
     options.onController?.(controller);
 
     try {
-      const chatPath = this.path(OpenaiPath.ChatPath);
+      const chatPath = this.path(OpenaiPath.ChatPath, modelConfig.model);
       const chatPayload = {
         method: "POST",
         body: JSON.stringify(requestPayload),
@@ -286,16 +285,20 @@ export class ChatGPTApi implements LLMApi {
         model: options.config.model,
       },
     };
-
+    const accessStore = useAccessStore.getState();
+    const isAzure = accessStore.provider === ServiceProvider.Azure;
+    let baseUrl = isAzure ? accessStore.azureUrl : accessStore.openaiUrl;
     const requestPayload = {
       messages,
+      isAzure,
+      azureApiVersion: accessStore.azureApiVersion,
       stream: options.config.stream,
       model: modelConfig.model,
       temperature: modelConfig.temperature,
       presence_penalty: modelConfig.presence_penalty,
       frequency_penalty: modelConfig.frequency_penalty,
       top_p: modelConfig.top_p,
-      baseUrl: useAccessStore.getState().openaiUrl,
+      baseUrl: baseUrl,
       maxIterations: options.agentConfig.maxIterations,
       returnIntermediateSteps: options.agentConfig.returnIntermediateSteps,
       useTools: options.agentConfig.useTools,
@@ -323,7 +326,7 @@ export class ChatGPTApi implements LLMApi {
         () => controller.abort(),
         REQUEST_TIMEOUT_MS,
       );
-      console.log("shouldStream", shouldStream);
+      // console.log("shouldStream", shouldStream);
 
       if (shouldStream) {
         let responseText = "";
@@ -514,6 +517,11 @@ export class ChatGPTApi implements LLMApi {
     return chatModels.map((m) => ({
       name: m.id,
       available: true,
+      provider: {
+        id: "openai",
+        providerName: "OpenAI",
+        providerType: "openai",
+      },
     }));
   }
 }

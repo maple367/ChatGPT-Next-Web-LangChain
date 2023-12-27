@@ -155,11 +155,10 @@ export function SideBar(props: { className?: string }) {
     >
       <div className={styles["sidebar-header"]} data-tauri-drag-region>
         <div className={styles["sidebar-title"]} data-tauri-drag-region>
-          GPT FOR NOEL
+          NextChat
         </div>
         <div className={styles["sidebar-sub-title"]}>
-          插件功能已更新，欢迎使用。输入搜索提示语可在线搜索。DALL·E比较贵，酌情使用（可以在面具里选择“以文搜图”代替）。GPT-4价格是3.5的10倍！！！
-          GPT-4已支持识图。
+          Build your own AI assistant.
         </div>
         <div className={styles["sidebar-logo"] + " no-dark"}>
           <ChatGptIcon />
