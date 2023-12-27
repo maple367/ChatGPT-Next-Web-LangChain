@@ -465,12 +465,35 @@ export function ChatActions(props: {
   const onImageSelected = async (e: any) => {
     const file = e.target.files[0];
     const api = new ClientApi();
-    const fileName = await api.file.upload(file);
-    props.imageSelected({
-      fileName,
-      fileUrl: `/api/file/${fileName}`,
-    });
-    e.target.value = null;
+    // Get pixel size of image
+    const img = document.createElement('img')
+    img.src = URL.createObjectURL(file);
+    async function getPixelSize(img: any) {
+      return new Promise((resolve, reject) => {
+        img.onload = function() {
+          const pixelSize = {
+            width: img.width,
+            height: img.height,
+          };
+          console.log('Pixel Size:', img.width, img.height);
+          resolve(pixelSize);
+        }
+        img.onerror = reject
+      })
+    }
+    // Check if pixel size is greater than 1024 * 1024
+    getPixelSize(img).then(async (pixelSize: any) => {
+      if (pixelSize.width*pixelSize.height > 1024 * 1024) {
+        showToast("pixel must <= 1024 * 1024");
+      } else {
+        const fileName = await api.file.upload(file);
+        props.imageSelected({
+          fileName,
+          fileUrl: `/api/file/${fileName}`,
+        });
+        e.target.value = null;
+      }
+    })
   };
 
   // switch model
@@ -580,7 +603,8 @@ export function ChatActions(props: {
 
         {config.pluginConfig.enable &&
           /^gpt(?!.*03\d{2}$).*$/.test(currentModel) &&
-          currentModel != "gpt-4-vision-preview" && (
+          // currentModel != "gpt-4-vision-preview" &&
+          /^gpt(?!-4.*$).*$/.test(currentModel) && (
             <ChatAction
               onClick={switchUsePlugins}
               text={
